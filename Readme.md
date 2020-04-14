@@ -1,6 +1,7 @@
 # Coronavirus
 
 ## Graphs  
+This folder contains graphs for all places with more than 1000 cases.  
 The left graph shows coronavirus growth (this week's cases / total cases) over time.  
 The right graph shows cumulative cases over time (log scale).  
 
