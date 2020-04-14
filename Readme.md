@@ -1,6 +1,6 @@
 # Coronavirus
 
-## time_series.ipynb 
+## Graphs  
 These graphs shows coronavirus growth (this week's cases / total cases) over time. 
 
 ## time_series.xlsx
