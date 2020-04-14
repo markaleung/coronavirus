@@ -1,7 +1,9 @@
 # Coronavirus
 
-## time_series.ipynb 
-These graphs shows coronavirus growth (this week's cases / total cases) over time. 
+## Graphs  
+This folder contains graphs for all places with more than 1000 cases.  
+The left graph shows coronavirus growth (this week's cases / total cases) over time.  
+The right graph shows cumulative cases over time (log scale).  
 
 ## time_series.xlsx
 Sheet world1 shows total cases over time.  
