@@ -40,17 +40,22 @@ class CV():
 			plt.ylim([1, 1e6])
 			plt.grid(True)
 
-	def getPlot(self, names, width = 13):
+	def showPlot(self, names, width = 13):
 		# Plot to output
 		self.plotHelper(names, width)
 		plt.show()
 		plt.close(self.figure)
 
-	def getPlot2(self, names, folder, width = 13):
+	def savePlot(self, names, folder, width = 13):
 		# Save to disk
 		f = self.plotHelper(names, width)
 		plt.savefig('%s/%s.png' % (folder, '-'.join(names)))
 		plt.close(self.figure)
+
+	def plotTop(self, name):
+		lastColumn = self.total.columns[-1]
+		for country in tqdm.tqdm(self.total[self.total[lastColumn] > 1000].index):
+			self.savePlot([country], name)	
 
 def getWorld():
 	def makeSource(url):
@@ -67,16 +72,14 @@ def getWorld():
 	# Call Class
 	cv = CV()
 	cv.getData(7, 'time_series.xlsx', total, active)
-	for country in tqdm.tqdm(total[total[total.columns[-1]] > 1000].index):
-		cv.getPlot2([country], 'Graphs')
+	return cv
 
 def getUS():
-	us = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv').drop('UID\tiso2\tiso3\tcode3\tFIPS\tAdmin2\tCountry_Region\tLat\tLong_\tCombined_Key'.split('\t'), axis=1).groupby('Province_State').sum()
+	us = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv').drop(['UID', 'iso2', 'iso3', 'code3', 'FIPS', 'Admin2', 'Country_Region', 'Lat', 'Long_', 'Combined_Key'], axis=1).groupby('Province_State').sum()
 	cv = CV()
 	cv.getData(7, 'time_series_us.xlsx', us)
-	for state in tqdm.tqdm(us[us[us.columns[-1]] > 1000].index):
-		cv.getPlot2([state], 'US')
+	return cv
 
 if __name__=='__main__':
-	getWorld()
-	getUS()
+	getWorld().plotTop('Graphs')
+	getUS().plotTop('US')
