@@ -1,31 +1,39 @@
-import pandas as pd, matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')
+import pandas as pd, matplotlib.pyplot as plt, tqdm
 
 class CV():
 	
 	def getData(self, gap, filename, total, active = None):
+		# How many days to use as recent days
 		self.gap = gap
 		self.total = total.fillna(0)
+		# Use active if present
 		self.active = self.total.copy() if active is None else active.fillna(0)
+		# Calculate new cases in recent days
 		self.new = self.total.copy()
 		for i in range(self.gap, self.total.shape[1]):
 			self.new.iloc[:, i] = self.total.iloc[:, i] - self.total.iloc[:, i-self.gap]
+		# Get growth rate
 		self.ratio = (self.new / (self.active + 1)).iloc[:, self.gap:]
 		self.new = self.new.iloc[:, self.gap:]
+		# Write Out
 		writer = pd.ExcelWriter(filename)
 		for name in 'total', 'active', 'new', 'ratio':
 			eval('self.'+name).replace(0, float('nan')).reset_index().to_excel(writer, name, index=False)
 		writer.save()
 
 	def plotHelper(self, names, width = 13):
+		# If width < 13, print left graph only
 		self.figure = plt.figure(figsize = (width, 6))
-		if width == 13:
+		if width >= 13:
 			plt.subplot(1, 2, 1)
 		self.ratio.T[names].plot(ax=self.figure.gca(), rot = 90)
 		plt.legend(loc='lower left', bbox_to_anchor=(0, 1), ncol = 5)
 		plt.ylim([0, 1])
 		plt.grid(True)
 		
-		if width == 13:
+		if width >= 13:
 			plt.subplot(1, 2, 2)
 			self.active.T[self.gap:][names].plot(ax=self.figure.gca(), rot = 90, logy = True)
 			plt.legend().remove()
@@ -33,11 +41,42 @@ class CV():
 			plt.grid(True)
 
 	def getPlot(self, names, width = 13):
+		# Plot to output
 		self.plotHelper(names, width)
 		plt.show()
 		plt.close(self.figure)
 
 	def getPlot2(self, names, folder, width = 13):
+		# Save to disk
 		f = self.plotHelper(names, width)
 		plt.savefig('%s/%s.png' % (folder, '-'.join(names)))
 		plt.close(self.figure)
+
+def getWorld():
+	def makeSource(url):
+		source = pd.read_csv(url)
+		# Get Countries
+		world = source.drop(['Province/State', 'Lat', 'Long'], axis = 1).groupby('Country/Region').sum()
+		# Get Territories
+		other = source[source['Province/State'].isin(used)].drop(['Country/Region', 'Lat', 'Long'], axis=1).groupby('Province/State').sum()
+		return pd.concat([world, other])
+	used = ['Hong Kong', 'Macau', 'Hubei', 'Guangdong']
+	# Get Data
+	total = makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+	active = total - makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
+	# Call Class
+	cv = CV()
+	cv.getData(7, 'time_series.xlsx', total, active)
+	for country in tqdm.tqdm(total[total[total.columns[-1]] > 1000].index):
+		cv.getPlot2([country], 'Graphs')
+
+def getUS():
+	us = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv').drop('UID\tiso2\tiso3\tcode3\tFIPS\tAdmin2\tCountry_Region\tLat\tLong_\tCombined_Key'.split('\t'), axis=1).groupby('Province_State').sum()
+	cv = CV()
+	cv.getData(7, 'time_series_us.xlsx', us)
+	for state in tqdm.tqdm(us[us[us.columns[-1]] > 1000].index):
+		cv.getPlot2([state], 'US')
+
+if __name__=='__main__':
+	getWorld()
+	getUS()
