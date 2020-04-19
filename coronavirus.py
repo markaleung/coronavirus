@@ -1,5 +1,3 @@
-import matplotlib
-matplotlib.use('TkAgg')
 import pandas as pd, matplotlib.pyplot as plt, tqdm
 
 class CV():
@@ -52,10 +50,13 @@ class CV():
 		plt.savefig('%s/%s.png' % (folder, '-'.join(names)))
 		plt.close(self.figure)
 
-	def plotTop(self, name):
+	def plotTop(self, name, top = 1000):
 		lastColumn = self.total.columns[-1]
-		for country in tqdm.tqdm(self.total[self.total[lastColumn] > 1000].index):
+		for country in tqdm.tqdm(self.total[self.total[lastColumn] > top].index):
 			self.savePlot([country], name)	
+
+	def __init__(self, gap, filename, total, active = None):
+		self.getData(gap, filename, total, active)
 
 def getWorld():
 	def makeSource(url):
@@ -70,15 +71,11 @@ def getWorld():
 	total = makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 	active = total - makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
 	# Call Class
-	cv = CV()
-	cv.getData(7, 'time_series.xlsx', total, active)
-	return cv
+	return CV(7, 'time_series.xlsx', total, active)
 
 def getUS():
-	us = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv').drop(['UID', 'iso2', 'iso3', 'code3', 'FIPS', 'Admin2', 'Country_Region', 'Lat', 'Long_', 'Combined_Key'], axis=1).groupby('Province_State').sum()
-	cv = CV()
-	cv.getData(7, 'time_series_us.xlsx', us)
-	return cv
+	total = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv').drop(['UID', 'iso2', 'iso3', 'code3', 'FIPS', 'Admin2', 'Country_Region', 'Lat', 'Long_', 'Combined_Key'], axis=1).groupby('Province_State').sum()
+	return CV(7, 'time_series_us.xlsx', total)
 
 if __name__=='__main__':
 	getWorld().plotTop('Graphs')
