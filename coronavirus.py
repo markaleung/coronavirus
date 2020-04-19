@@ -18,22 +18,21 @@ class CV():
 		# Write Out
 		writer = pd.ExcelWriter(filename)
 		for name in 'total', 'active', 'new', 'ratio':
-			eval('self.'+name).replace(0, float('nan')).reset_index().to_excel(writer, name, index=False)
+			eval('self.'+name).replace(0, float('nan')).to_excel(writer, name)
 		writer.save()
 
 	def getPlot(self, names, folder = None, width = 13):
 		f = plt.figure(figsize = (width, 6))
+		# If width < 13, print left graph only
 		if width >= 13:
-			# If width < 13, print left graph only
 			plt.subplot(1, 2, 1)
 		self.ratio.T[names].plot(ax=f.gca(), rot = 90)
 		# Put legend on top
 		plt.legend(loc='lower left', bbox_to_anchor=(0, 1), ncol = 5)
 		plt.ylim([0, 1])
 		plt.grid(True)
-		
+		# If width < 13, print left graph only
 		if width >= 13:
-			# If width < 13, print left graph only
 			plt.subplot(1, 2, 2)
 			self.active.T[self.gap:][names].plot(ax=f.gca(), rot = 90, logy = True)
 			plt.legend().remove()
@@ -46,12 +45,12 @@ class CV():
 	def plotTop(self, name, top = 1000):
 		lastColumn = self.total.columns[-1]
 		for country in tqdm.tqdm(self.total[self.total[lastColumn] > top].index):
-			self.getPlot([country], folder = name)	
+			self.getPlot([country], folder = name)
 
 	def __init__(self, gap, filename, total, active = None):
 		self.getData(gap, filename, total, active)
 
-def getWorld():
+def getWorld(used):
 	def makeSource(url):
 		source = pd.read_csv(url)
 		# Get Countries
@@ -59,7 +58,6 @@ def getWorld():
 		# Get Territories
 		other = source[source['Province/State'].isin(used)].drop(['Country/Region', 'Lat', 'Long'], axis=1).groupby('Province/State').sum()
 		return pd.concat([world, other])
-	used = ['Hong Kong', 'Macau', 'Hubei', 'Guangdong']
 	# Get Data
 	total = makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 	active = total - makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
@@ -71,5 +69,5 @@ def getUS():
 	return CV(7, 'time_series_us.xlsx', total)
 
 if __name__=='__main__':
-	getWorld().plotTop('Graphs')
+	getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong']).plotTop('Graphs')
 	getUS().plotTop('US')
