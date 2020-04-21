@@ -1,4 +1,4 @@
-import pandas as pd, matplotlib.pyplot as plt, tqdm
+import pandas as pd, matplotlib.pyplot as plt, tqdm, datetime
 
 class CV():
 	
@@ -30,14 +30,14 @@ class CV():
 		# Put legend on top
 		plt.legend(loc='lower left', bbox_to_anchor=(0, 1), ncol = 5)
 		plt.ylim([0, 1])
-		plt.grid(True)
+		plt.grid(True, 'both')
 		# If width < 13, print left graph only
 		if width >= 13:
 			plt.subplot(1, 2, 2)
 			self.active.T[self.gap:][names].plot(ax=f.gca(), rot = 90, logy = True)
 			plt.legend().remove()
 			plt.ylim([1, 1e6])
-			plt.grid(True)
+			plt.grid(True, 'both')
 		# Save or Show?
 		plt.savefig('%s/%s.png' % (folder, '-'.join(names))) if folder else plt.show()
 		plt.close(f)
@@ -69,5 +69,10 @@ def getUS():
 	return CV(7, 'time_series_us.xlsx', total)
 
 if __name__=='__main__':
-	getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong']).plotTop('Graphs')
-	getUS().plotTop('US')
+	world = getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong'])
+	lastDay = datetime.datetime.strptime(world.total.columns[-1], '%m/%d/%y').date()
+	yesterday = datetime.date.today() - datetime.timedelta(1)
+	print(lastDay, yesterday)
+	if lastDay == yesterday:
+		world.plotTop('Graphs')
+		getUS().plotTop('US')
