@@ -2,7 +2,7 @@ import pandas as pd, matplotlib.pyplot as plt, tqdm, datetime
 
 class CV():
 	
-	def getData(self, gap, filename, total, active = None):
+	def getData(self, gap, total, active = None):
 		# How many days to use as recent days
 		self.gap = gap
 		self.total = total.fillna(0)
@@ -16,10 +16,6 @@ class CV():
 		self.ratio = (self.new / (self.active + 1)).iloc[:, self.gap:]
 		self.new = self.new.iloc[:, self.gap:]
 		# Write Out
-		writer = pd.ExcelWriter(filename)
-		for name in 'total', 'active', 'new', 'ratio':
-			eval('self.'+name).replace(0, float('nan')).to_excel(writer, name)
-		writer.save()
 
 	def getPlot(self, names, folder = None, width = 13):
 		f = plt.figure(figsize = (width, 6))
@@ -47,8 +43,17 @@ class CV():
 		for country in tqdm.tqdm(self.total[self.total[lastColumn] > top].index):
 			self.getPlot([country], folder = name)
 
-	def __init__(self, gap, filename, total, active = None):
-		self.getData(gap, filename, total, active)
+	def getLast(self):
+		datetime.datetime.strptime(self.total.columns[-1], '%m/%d/%y').date() == datetime.date.today() - datetime.timedelta(1)
+
+	def writeOut(self, filename):
+		writer = pd.ExcelWriter(filename)
+		for name in 'total', 'active', 'new', 'ratio':
+			eval('self.'+name).replace(0, float('nan')).to_excel(writer, name)
+		writer.save()
+
+	def __init__(self, gap, total, active = None):
+		self.getData(gap, total, active)
 
 def getWorld(used):
 	def makeSource(url):
@@ -62,17 +67,18 @@ def getWorld(used):
 	total = makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 	active = total - makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
 	# Call Class
-	return CV(7, 'time_series.xlsx', total, active)
+	return CV(7, total, active, )
 
 def getUS():
 	total = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv').drop(['UID', 'iso2', 'iso3', 'code3', 'FIPS', 'Admin2', 'Country_Region', 'Lat', 'Long_', 'Combined_Key'], axis=1).groupby('Province_State').sum()
-	return CV(7, 'time_series_us.xlsx', total)
+	return CV(7, total, )
 
 if __name__=='__main__':
 	world = getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong'])
-	lastDay = datetime.datetime.strptime(world.total.columns[-1], '%m/%d/%y').date()
-	yesterday = datetime.date.today() - datetime.timedelta(1)
-	print(lastDay, yesterday)
-	if lastDay == yesterday:
+	us = getUS()
+	if world.getLast():
+		world.writeOut('time_series.xlsx')
 		world.plotTop('Graphs')
-		getUS().plotTop('US')
+	if us.getLast():
+		us.writeOut('time_series_us.xlsx')
+		us.plotTop('US')
