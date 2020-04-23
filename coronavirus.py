@@ -43,8 +43,8 @@ class CV():
 		for country in tqdm.tqdm(self.total[self.total[lastColumn] > top].index):
 			self.getPlot([country], folder = name)
 
-	def getLast(self):
-		datetime.datetime.strptime(self.total.columns[-1], '%m/%d/%y').date() == datetime.date.today() - datetime.timedelta(1)
+	def getUpdated(self, filename):
+		return self.total.columns[-1] != pd.read_excel(filename).columns[-1]
 
 	def writeOut(self, filename):
 		writer = pd.ExcelWriter(filename)
@@ -76,9 +76,10 @@ def getUS():
 if __name__=='__main__':
 	world = getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong'])
 	us = getUS()
-	if world.getLast():
-		world.writeOut('time_series.xlsx')
+	worldFile, usFile = 'time_series.xlsx', 'time_series_us.xlsx'
+	if world.getUpdated(worldFile):
+		world.writeOut(worldFile)
 		world.plotTop('Graphs')
-	if us.getLast():
-		us.writeOut('time_series_us.xlsx')
+	if us.getUpdated(usFile):
+		us.writeOut(usFile)
 		us.plotTop('US')
