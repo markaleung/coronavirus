@@ -1,4 +1,4 @@
-import pandas as pd, matplotlib.pyplot as plt, tqdm, datetime
+import pandas as pd, matplotlib.pyplot as plt, tqdm
 
 class CV():
 	
@@ -38,21 +38,25 @@ class CV():
 		plt.savefig('%s/%s.png' % (folder, '-'.join(names))) if folder else plt.show()
 		plt.close(f)
 
+	def getUpdated(self):
+		new = self.total.columns[-1]
+		old = pd.read_excel(self.filename).columns[-1]
+		print(new, old)
+		return new != old
+
+	def writeOut(self):
+		writer = pd.ExcelWriter(self.filename)
+		for name in 'total', 'active', 'new', 'ratio':
+			eval('self.'+name).replace(0, float('nan')).to_excel(writer, name)
+		writer.save()
+
 	def plotTop(self, name, top = 1000):
 		lastColumn = self.total.columns[-1]
 		for country in tqdm.tqdm(self.total[self.total[lastColumn] > top].index):
 			self.getPlot([country], folder = name)
 
-	def getUpdated(self, filename):
-		return self.total.columns[-1] != pd.read_excel(filename).columns[-1]
-
-	def writeOut(self, filename):
-		writer = pd.ExcelWriter(filename)
-		for name in 'total', 'active', 'new', 'ratio':
-			eval('self.'+name).replace(0, float('nan')).to_excel(writer, name)
-		writer.save()
-
-	def __init__(self, gap, total, active = None):
+	def __init__(self, gap, filename, total, active = None):
+		self.filename = filename
 		self.getData(gap, total, active)
 
 def getWorld(used):
@@ -67,19 +71,18 @@ def getWorld(used):
 	total = makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 	active = total - makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
 	# Call Class
-	return CV(7, total, active, )
+	return CV(7, 'time_series.xlsx', total, active, )
 
 def getUS():
 	total = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv').drop(['UID', 'iso2', 'iso3', 'code3', 'FIPS', 'Admin2', 'Country_Region', 'Lat', 'Long_', 'Combined_Key'], axis=1).groupby('Province_State').sum()
-	return CV(7, total, )
+	return CV(7, 'time_series_us.xlsx', total, )
 
 if __name__=='__main__':
 	world = getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong'])
 	us = getUS()
-	worldFile, usFile = 'time_series.xlsx', 'time_series_us.xlsx'
-	if world.getUpdated(worldFile):
-		world.writeOut(worldFile)
+	if world.getUpdated():
+		world.writeOut()
 		world.plotTop('Graphs')
-	if us.getUpdated(usFile):
-		us.writeOut(usFile)
+	if us.getUpdated():
+		us.writeOut()
 		us.plotTop('US')
