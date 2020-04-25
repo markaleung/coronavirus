@@ -39,9 +39,9 @@ class CV():
 		plt.close(f)
 
 	def getUpdated(self):
-		new = self.total.columns[-1]
 		old = pd.read_excel(self.filename).columns[-1]
-		print(new, old)
+		new = self.total.columns[-1]
+		print('old', old, 'new', new)
 		return new != old
 
 	def writeOut(self):
