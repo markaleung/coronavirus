@@ -15,7 +15,6 @@ class CV():
 		# Get growth rate
 		self.ratio = (self.new / (self.active + 1)).iloc[:, self.gap:]
 		self.new = self.new.iloc[:, self.gap:]
-		# Write Out
 
 	def getPlot(self, names, folder = None, width = 13):
 		f = plt.figure(figsize = (width, 6))
@@ -50,10 +49,10 @@ class CV():
 			eval('self.'+name).replace(0, float('nan')).to_excel(writer, name)
 		writer.save()
 
-	def plotTop(self, name, top = 1000):
+	def plotTop(self, folder, top = 1000):
 		lastColumn = self.total.columns[-1]
 		for country in tqdm.tqdm(self.total[self.total[lastColumn] > top].index):
-			self.getPlot([country], folder = name)
+			self.getPlot([country], folder = folder)
 
 	def __init__(self, gap, filename, total, active = None):
 		self.filename = filename
