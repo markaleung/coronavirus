@@ -31,7 +31,7 @@ class CV():
 			plt.subplot(1, 2, 2)
 			self.active.T[self.gap:][names].plot(ax=f.gca(), rot = 90, logy = True)
 			plt.legend().remove()
-			plt.ylim([1, 1e6])
+			plt.ylim([1, 3e6])
 			plt.grid(True, 'both')
 		# Save or Show?
 		plt.savefig('%s/%s.png' % (self.filename, '-'.join(names))) if write else plt.show()
