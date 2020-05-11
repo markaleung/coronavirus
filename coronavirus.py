@@ -81,7 +81,7 @@ def getUS():
 if __name__=='__main__':
 	world = getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong'])
 	us = getUS()
-	override = False
+	override = True
 	if world.getUpdated() or override:
 		world.writeOut()
 		world.plotTop()
