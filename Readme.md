@@ -1,11 +1,11 @@
 # Coronavirus
   
-## Graphs  
+## time_series_world  
 This folder contains graphs for all places with more than 1000 cases.  
 The left graph shows coronavirus growth (this week's new cases / active cases) over time.  
 The right graph shows active cases over time (log scale).  
   
-## time_series.xlsx
+## time_series_world.xlsx
 total: total cumulative cases.  
 active: total cumulative cases - recovered cases.  
 new: this week's new cases.  

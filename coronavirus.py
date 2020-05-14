@@ -2,11 +2,14 @@ import pandas as pd, matplotlib.pyplot as plt, tqdm
 
 class CV():
 	
-	def getData(self, gap, total, active = None):
-		# How many days to use as recent days
+	def getData(self, gap, total, active = None, top = None):
+		# Global Variables
 		self.gap = gap
+		self.tables = ['total', 'active', 'new', 'ratio', 'last']
+		if active is None:
+			self.tables.remove('active') 
+		# Use active if present, else total
 		self.total = total.fillna(0)
-		# Use active if present
 		self.active = self.total.copy() if active is None else active.fillna(0)
 		# Calculate new cases in recent days
 		self.new = self.total.copy()
@@ -15,8 +18,14 @@ class CV():
 		# Get growth rate
 		self.ratio = (self.new / (self.active + 1)).iloc[:, self.gap:]
 		self.new = self.new.iloc[:, self.gap:]
-		# Limit
-		self.condition = self.total[self.total.columns[-1]] > self.top
+		# Condition
+		self.lastColumn = self.total.columns[-1]
+		self.condition = self.total[self.lastColumn] > top		
+		# Last Column of Every Table
+		temp = {}
+		for name in self.tables[:-1]:
+			temp[name] = eval('self.'+name)[self.lastColumn]
+		self.last = pd.DataFrame(temp)
 
 	def getPlot(self, names, write = None, width = 13):
 		f = plt.figure(figsize = (width, 6))
@@ -41,13 +50,13 @@ class CV():
 
 	def getUpdated(self):
 		old = pd.read_excel(self.filename+'.xlsx').columns[-1]
-		new = self.total.columns[-1]
+		new = self.lastColumn
 		print('old', old, 'new', new)
 		return new != old
 
 	def writeOut(self):
 		writer = pd.ExcelWriter(self.filename+'.xlsx')
-		for name in 'total', 'active', 'new', 'ratio':
+		for name in self.tables:
 			eval('self.'+name).replace(0, float('nan'))[self.condition].to_excel(writer, name)
 		writer.save()
 
@@ -57,8 +66,7 @@ class CV():
 
 	def __init__(self, gap, filename, total, active = None, top = 1000):
 		self.filename = filename
-		self.top = top
-		self.getData(gap, total, active)
+		self.getData(gap, total, active, top)
 
 def getWorld(used):
 	def makeSource(url):
