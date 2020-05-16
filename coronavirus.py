@@ -5,19 +5,18 @@ class CV():
 	def getData(self, gap, total, active = None, top = None):
 		# Global Variables
 		self.gap = gap
-		self.tables = ['total', 'active', 'new', 'ratio', 'last']
+		self.tables = ['total', 'active', 'new', 'growth', 'last']
 		if active is None:
 			self.tables.remove('active') 
 		# Use active if present, else total
 		self.total = total.fillna(0)
 		self.active = self.total.copy() if active is None else active.fillna(0)
-		# Calculate new cases in recent days
+		# Calculate new cases in recent days and growth
 		self.new = self.total.copy()
 		for i in range(self.gap, self.total.shape[1]):
 			self.new.iloc[:, i] = self.total.iloc[:, i] - self.total.iloc[:, i-self.gap]
-		# Get growth rate
-		self.ratio = (self.new / (self.active + 1)).iloc[:, self.gap:]
 		self.new = self.new.iloc[:, self.gap:]
+		self.growth = (self.new / (self.active.iloc[:, self.gap:] + 1))
 		# Condition
 		self.lastColumn = self.total.columns[-1]
 		self.condition = self.total[self.lastColumn] > top		
@@ -32,7 +31,7 @@ class CV():
 		# If width < 13, print left graph only
 		if width >= 13:
 			plt.subplot(1, 2, 1)
-		self.ratio.T[names].plot(ax=f.gca(), rot = 90)
+		self.growth.T[names].plot(ax=f.gca(), rot = 90)
 		# Put legend on top
 		plt.legend(loc='lower left', bbox_to_anchor=(0, 1), ncol = 5)
 		plt.ylim([0, 1])
