@@ -25,6 +25,7 @@ class CV():
 		for name in self.tables[:-1]:
 			temp[name] = eval('self.'+name)[self.lastColumn]
 		self.last = pd.DataFrame(temp)
+		self.last['rank'] = self.last.new.rank(ascending = False) + self.last.growth.rank(ascending = False)
 
 	def getPlot(self, names, write = None, width = 13):
 		f = plt.figure(figsize = (width, 6))
