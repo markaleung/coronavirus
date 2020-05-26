@@ -20,14 +20,12 @@ class CV():
 		# Condition
 		self.lastColumn = self.total.columns[-1]
 		self.condition = self.total[self.lastColumn] > top		
-		# Last Column of Every Table
-		temp = {}
-		for name in self.tables[:-1]:
-			temp[name] = eval('self.'+name)[self.lastColumn]
-		self.last = pd.DataFrame(temp)
-		self.last['rank'] = self.last.new.rank(ascending = False) + self.last.growth.rank(ascending = False)
+		# Make Table of Last Columns
+		self.last = pd.DataFrame({name: eval('self.'+name)[self.lastColumn] for name in self.tables[:-1]})
+		rank = lambda col: self.last[col].rank(ascending = False)
+		self.last['rank'] = rank('new') + rank('growth')
 
-	def getPlot(self, names, write = None, width = 13):
+	def getPlot(self, names, write = False, width = 13):
 		f = plt.figure(figsize = (width, 6))
 		# If width < 13, print left graph only
 		if width >= 13:
@@ -45,11 +43,11 @@ class CV():
 			plt.ylim([1, 2e6])
 			plt.grid(True, 'both')
 		# Save or Show?
-		plt.savefig('%s/%s.png' % (self.filename, '-'.join(names))) if write else plt.show()
+		plt.savefig(f'{self.filename}/{"-".join(names)}.png') if write else plt.show()
 		plt.close(f)
 
-	def getUpdated(self):
-		old = pd.read_excel(self.filename+'.xlsx').columns[-1]
+	def compareDate(self):
+		old = pd.read_excel(f'{self.filename}.xlsx').columns[-1]
 		new = self.lastColumn
 		print('old', old, 'new', new)
 		return new != old
@@ -57,7 +55,7 @@ class CV():
 	def writeOut(self):
 		writer = pd.ExcelWriter(self.filename+'.xlsx')
 		for name in self.tables:
-			eval('self.'+name).replace(0, float('nan'))[self.condition].to_excel(writer, name)
+			eval(f'self.{name}').replace(0, float('nan'))[self.condition].to_excel(writer, name)
 		writer.save()
 
 	def plotTop(self):
@@ -77,22 +75,24 @@ def getWorld(used):
 		other = source[source['Province/State'].isin(used)].drop(['Country/Region', 'Lat', 'Long'], axis=1).groupby('Province/State').sum()
 		return pd.concat([world, other])
 	# Get Data
-	total = makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
-	active = total - makeSource('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
+	total = makeSource(f'{domain}_confirmed_global.csv')
+	active = total - makeSource(f'{domain}_recovered_global.csv')
 	# Call Class
 	return CV(7, 'time_series_world', total, active, )
 
 def getUS():
-	total = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv').drop(['UID', 'iso2', 'iso3', 'code3', 'FIPS', 'Admin2', 'Country_Region', 'Lat', 'Long_', 'Combined_Key'], axis=1).groupby('Province_State').sum()
+	total = pd.read_csv(f'{domain}_confirmed_US.csv').drop(['UID', 'iso2', 'iso3', 'code3', 'FIPS', 'Admin2', 'Country_Region', 'Lat', 'Long_', 'Combined_Key'], axis=1).groupby('Province_State').sum()
 	return CV(7, 'time_series_us', total, )
+
+domain = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19'
 
 if __name__=='__main__':
 	world = getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong'])
 	us = getUS()
 	override = False
-	if world.getUpdated() or override:
+	if world.compareDate() or override:
 		world.writeOut()
 		world.plotTop()
-	if us.getUpdated() or override:
+	if us.compareDate() or override:
 		us.writeOut()
 		us.plotTop()
