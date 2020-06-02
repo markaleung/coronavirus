@@ -5,7 +5,7 @@ class CV():
 	def getData(self, gap, total, active = None, top = None):
 		# Global Variables
 		self.gap = gap
-		self.tables = ['total', 'active', 'new', 'growth', 'last']
+		self.tables = ['total', 'active', 'new', 'growth']
 		if active is None:
 			self.tables.remove('active') 
 		# Use active if present, else total
@@ -21,10 +21,9 @@ class CV():
 		self.lastColumn = self.total.columns[-1]
 		self.condition = self.total[self.lastColumn] > top		
 		# Make Table of Last Columns
-		self.last = pd.DataFrame({name: eval('self.'+name)[self.lastColumn] for name in self.tables[:-1]})
+		self.last = pd.DataFrame({name: eval('self.'+name)[self.lastColumn] for name in self.tables})
 		rank = lambda col: self.last[col].rank(ascending = False)
 		self.last['rank'] = rank('new') + rank('growth')
-		self.last = self.last.sort_values('rank', ascending = False)
 
 	def getPlot(self, names, write = False, width = 13):
 		f = plt.figure(figsize = (width, 6))
@@ -55,8 +54,9 @@ class CV():
 
 	def writeOut(self):
 		writer = pd.ExcelWriter(self.filename+'.xlsx')
-		for name in self.tables:
-			eval(f'self.{name}').replace(0, float('nan'))[self.condition].to_excel(writer, name)
+		fix = lambda name: eval(f'self.{name}').replace(0, float('nan'))[self.condition]
+		[fix(name).to_excel(writer, name) for name in self.tables]	
+		fix('last').sort_values('rank', ascending = True).to_excel(writer, 'last')
 		writer.save()
 
 	def plotTop(self):
