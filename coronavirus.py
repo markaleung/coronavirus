@@ -7,7 +7,7 @@ class CV():
 		self.gap = gap
 		self.tables = ['total', 'active', 'new', 'growth']
 		if active is None:
-			self.tables.remove('active') 
+			self.tables.remove('active')
 		# Use active if present, else total
 		self.total = total.fillna(0)
 		self.active = self.total.copy() if active is None else active.fillna(0)
@@ -47,16 +47,16 @@ class CV():
 		plt.close(f)
 
 	def compareDate(self):
-		old = pd.read_excel(f'{self.filename}.xlsx').columns[-1]
+		old = pd.read_excel(f'{self.filename}.xlsx', sheet_name = 'total').columns[-1]
 		new = self.lastColumn
 		print('old', old, 'new', new)
 		return new != old
 
-	def writeOut(self):
+	def writeExcel(self):
 		writer = pd.ExcelWriter(self.filename+'.xlsx')
 		fix = lambda name: eval(f'self.{name}').replace(0, float('nan'))[self.condition]
-		[fix(name).to_excel(writer, name) for name in self.tables]	
 		fix('last').sort_values('rank', ascending = True).to_excel(writer, 'last')
+		[fix(name).to_excel(writer, name) for name in self.tables]	
 		writer.save()
 
 	def plotTop(self):
@@ -88,12 +88,7 @@ def getUS():
 domain = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19'
 
 if __name__=='__main__':
-	world = getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong'])
-	us = getUS()
-	override = False
-	if world.compareDate() or override:
-		world.writeOut()
-		world.plotTop()
-	if us.compareDate() or override:
-		us.writeOut()
-		us.plotTop()
+	for cv in getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong']), getUS():	
+		if cv.compareDate() or False:
+			cv.writeExcel()
+			cv.plotTop()
