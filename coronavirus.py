@@ -8,7 +8,7 @@ class CV():
 		self.tables = ['total', 'active', 'new', 'growth']
 		if active is None:
 			self.tables.remove('active')
-		# Use active if present, else total
+		# Use active as denominator if present, else total
 		self.total = total.fillna(0)
 		self.active = self.total.copy() if active is None else active.fillna(0)
 		# Calculate new cases in recent days and growth
@@ -88,7 +88,7 @@ def getUS():
 domain = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19'
 
 if __name__=='__main__':
-	for cv in getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong']), getUS():	
+	for cv in getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong', 'Victoria']), getUS():	
 		if cv.compareDate() or False:
 			cv.writeExcel()
 			cv.plotTop()
