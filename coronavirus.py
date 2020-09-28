@@ -1,4 +1,4 @@
-import pandas as pd, matplotlib.pyplot as plt, tqdm
+import pandas as pd, matplotlib.pyplot as plt, tqdm, os, osascript
 
 class CV():
 	
@@ -40,11 +40,23 @@ class CV():
 			plt.subplot(1, 2, 2)
 			self.active.T[self.gap:][names].plot(ax=f.gca(), rot = 90, logy = True)
 			plt.legend().remove()
-			plt.ylim([1, 2e6])
+			plt.ylim([1, self.active.max().max() * 1.5])
 			plt.grid(True, 'both')
 		# Save or Show?
 		plt.savefig(f'{self.filename}/{"-".join(names)}.png') if write else plt.show()
 		plt.close(f)
+
+	def plotOne(self, names):
+		fig, ax1 = plt.subplots()
+		self.growth.T[names].plot(ax=ax1, style = 'r-')
+		plt.ylim([0, 1])
+		ax1.tick_params(axis = 'y', labelcolor='r')
+		ax2 = ax1.twinx()
+		self.active.T[self.gap:][names].plot(ax=ax2, logy=True, style = 'b-')
+		plt.ylim([1, self.active.max().max() * 1.5])
+		ax2.tick_params(axis = 'y', labelcolor='b')
+		plt.savefig(f'{self.filename}/{names}.png')
+		plt.close()
 
 	def compareDate(self):
 		old = pd.read_excel(f'{self.filename}.xlsx', sheet_name = 'total').columns[-1]
@@ -61,7 +73,7 @@ class CV():
 
 	def plotTop(self):
 		for country in tqdm.tqdm(self.total[self.condition].index):
-			self.getPlot([country], write = True)
+			self.plotOne(country)
 
 	def __init__(self, gap, filename, total, active = None, top = 1000):
 		self.filename = filename
@@ -88,7 +100,12 @@ def getUS():
 domain = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19'
 
 if __name__=='__main__':
+	os.chdir(os.path.dirname(os.path.abspath(__file__)))
+	notify = False
 	for cv in getWorld(['Hong Kong', 'Macau', 'Hubei', 'Guangdong', 'Victoria']), getUS():	
 		if cv.compareDate() or False:
 			cv.writeExcel()
 			cv.plotTop()
+			notify = True
+	if notify:
+		osascript.run('display notification "Coronavirus Updated"')
